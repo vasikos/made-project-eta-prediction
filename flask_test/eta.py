@@ -85,20 +85,22 @@ app = Flask(__name__)
 
 @app.route("/")
 def print_help():
-    return "<p>Для использования отправьте координаты череза запятую</p>"+ \
-            "<p>пример http://localhost:5000/eta?cs=39.934155,116.433318,39.932,116.386536</p>"+ \
-            "<p>или 9fe7-176-213-136-166.ngrok.io/eta?cs=39.934155,116.433318,39.932,116.386536</p>"+ \
-            "<p>или 9fe7-176-213-136-166.ngrok.io/etadebug?cs=39.934155,116.433318,39.932,116.386536</p>"+ \
+    return "<p>Для использования выберите на карте две точки</p>"+ \
             f"<p>тест модели {model(dg, 'data', [[8089],[8088]])}</p>" + \
             '''
-            <div id="srclatitude">Here will be chosen src latitude</div>
-            <div id="srclongitude">Here will be chosen src longitude</div>
-            <div id="dstlatitude">Here will be chosen dst latitude</div>
-            <div id="dstlongitude">Here will be chosen dst longitude</div>
+            <div id="srclatitude">Точка А пока не выбрана</div>
+            <div id="srclongitude">Точка А пока не выбрана</div>
+            <div id="dstlatitude">Точка Б пока не выбрана</div>
+            <div id="dstlongitude">Точка Б пока не выбрана</div>
+            <div id="progress">Выберите две координаты на карте</div>
             <div id="map" style="width: 400px; height: 400px"></div>
             <script>
             var src = null;
             var dst = null;
+            // sleep time expects milliseconds
+            function sleep (time) {
+                return new Promise((resolve) => setTimeout(resolve, time));
+            }
             function initMap() {
                 const myLatlng = { lat: 39.934155, lng: 116.433318 };
                 const map = new google.maps.Map(document.getElementById("map"), {
@@ -131,15 +133,26 @@ def print_help():
                                 JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2)
                         );
                         infoWindow.open(map);
+                        if (src !== null && dst !== null) {
+                                src = null;
+                                dst = null;
+                        }
                         if (src === null) {
                                 src = [lat, lng];
                                 document.getElementById("srclatitude").textContent = lat;
                                 document.getElementById("srclongitude").textContent = lng;
+                                document.getElementById("dstlatitude").textContent = "...";
+                                document.getElementById("dstlongitude").textContent = "...";
                         } else if (dst === null) {
                                 dst = [lat, lng];
                                 document.getElementById("dstlatitude").textContent = lat;
                                 document.getElementById("dstlongitude").textContent = lng;
-                                window.location.href = "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1];
+                                document.getElementById("progress").textContent = "Суперсложная модель считает ETA, подождите...";
+                                sleep(2000).then(() => {
+                                        document.getElementById("progress").textContent =
+                                                "Вновь выберите две точки на карте"
+                                        window.location.href = "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1];
+                                });
                         }
                 });
             }
