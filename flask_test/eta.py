@@ -89,7 +89,65 @@ def print_help():
             "<p>пример http://localhost:5000/eta?cs=39.934155,116.433318,39.932,116.386536</p>"+ \
             "<p>или 9fe7-176-213-136-166.ngrok.io/eta?cs=39.934155,116.433318,39.932,116.386536</p>"+ \
             "<p>или 9fe7-176-213-136-166.ngrok.io/etadebug?cs=39.934155,116.433318,39.932,116.386536</p>"+ \
-            f"<p>тест модели {model(dg, 'data', [[8089],[8088]])}</p>"
+            f"<p>тест модели {model(dg, 'data', [[8089],[8088]])}</p>" + \
+            '''
+            <div id="srclatitude">Here will be chosen src latitude</div>
+            <div id="srclongitude">Here will be chosen src longitude</div>
+            <div id="dstlatitude">Here will be chosen dst latitude</div>
+            <div id="dstlongitude">Here will be chosen dst longitude</div>
+            <div id="map" style="width: 400px; height: 400px"></div>
+            <script>
+            var src = null;
+            var dst = null;
+            function initMap() {
+                const myLatlng = { lat: 39.934155, lng: 116.433318 };
+                const map = new google.maps.Map(document.getElementById("map"), {
+                    zoom: 13,
+                    center: myLatlng,
+                });
+                // Create the initial InfoWindow.
+                let infoWindow = new google.maps.InfoWindow({
+                    content: "Click the map to get Lat/Lng!",
+                    position: myLatlng,
+                });
+                infoWindow.open(map);
+                // Configure the click listener.
+                map.addListener("click", (mapsMouseEvent) => {
+                        var lat = mapsMouseEvent.latLng.lat();
+                        var lng = mapsMouseEvent.latLng.lng();
+                        //40.018554014719825, 116.2127729047114
+                        //39.755223483904714, 116.5988651106848
+                        if (lat < 39.752234839 || lat > 40.018554014 || lng < 116.212772904 || lng > 116.59886511) {
+                                alert("Wrong coordinates, please use some coordinates inside Beijing");
+                                return;
+                        }
+                        // Close the current InfoWindow.
+                        infoWindow.close();
+                        // Create a new InfoWindow.
+                        infoWindow = new google.maps.InfoWindow({
+                                position: mapsMouseEvent.latLng,
+                        });
+                        infoWindow.setContent(
+                                JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2)
+                        );
+                        infoWindow.open(map);
+                        if (src === null) {
+                                src = [lat, lng];
+                                document.getElementById("srclatitude").textContent = lat;
+                                document.getElementById("srclongitude").textContent = lng;
+                        } else if (dst === null) {
+                                dst = [lat, lng];
+                                document.getElementById("dstlatitude").textContent = lat;
+                                document.getElementById("dstlongitude").textContent = lng;
+                                window.location.href = "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1];
+                        }
+                });
+            }
+            </script>
+            <script
+            src="https://maps.googleapis.com/maps/api/js?callback=initMap&libraries=&v=weekly"
+            defer async></script>
+            '''
 
 
 @app.route("/eta")
