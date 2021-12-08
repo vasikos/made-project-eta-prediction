@@ -1,0 +1,85 @@
+<head>
+        <link rel="stylesheet" href="/static/eta.css">
+</head>
+<body>
+<div id='control'>
+        <div id="progress">Выберите две точки на карте</div>
+        <div class="coord_container">
+                <div>Точка А:</div>
+                <div id="srclatitude">Точка А пока не выбрана</div>
+                <div id="srclongitude">Точка А пока не выбрана</div>
+        </div>
+        <div class="coord_container">
+                <div>Точка Б:</div>
+                <div id="dstlatitude">Точка Б пока не выбрана</div>
+                <div id="dstlongitude">Точка Б пока не выбрана</div>
+        </div>
+        <div id="forecast"></div>
+</div>
+<div id="map"></div>
+<script>
+        var src = null;
+        var dst = null;
+        // sleep time expects milliseconds
+        function sleep (time) {
+                return new Promise((resolve) => setTimeout(resolve, time));
+        }
+        function initMap() {
+                const myLatlng = { lat: 39.934155, lng: 116.433318 };
+                const map = new google.maps.Map(document.getElementById("map"), {
+                        zoom: 13,
+                        center: myLatlng,
+                });
+                // Create the initial InfoWindow.
+                let infoWindow = new google.maps.InfoWindow({
+                        content: "Click the map to get Lat/Lng!",
+                        position: myLatlng,
+                });
+                infoWindow.open(map);
+                // Configure the click listener.
+                map.addListener("click", (mapsMouseEvent) => {
+                        var lat = mapsMouseEvent.latLng.lat();
+                        var lng = mapsMouseEvent.latLng.lng();
+                        //40.018554014719825, 116.2127729047114
+                        //39.755223483904714, 116.5988651106848
+                        if (lat < 39.752234839 || lat > 40.018554014 || lng < 116.212772904 || lng > 116.59886511) {
+                                alert("Wrong coordinates, please use some coordinates inside Beijing");
+                                return;
+                        }
+                        // Close the current InfoWindow.
+                        infoWindow.close();
+                        // Create a new InfoWindow.
+                        infoWindow = new google.maps.InfoWindow({
+                                position: mapsMouseEvent.latLng,
+                        });
+                        infoWindow.setContent(
+                                JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2)
+                        );
+                        infoWindow.open(map);
+                        if (src !== null && dst !== null) {
+                                src = null;
+                                dst = null;
+                        }
+                        if (src === null) {
+                                src = [lat, lng];
+                                document.getElementById("srclatitude").textContent = lat;
+                                document.getElementById("srclongitude").textContent = lng;
+                                document.getElementById("dstlatitude").textContent = "...";
+                                document.getElementById("dstlongitude").textContent = "...";
+                                document.getElementById("progress").textContent = "Выберите вторую точку.";
+                        } else if (dst === null) {
+                                dst = [lat, lng];
+                                document.getElementById("dstlatitude").textContent = lat;
+                                document.getElementById("dstlongitude").textContent = lng;
+                                document.getElementById("progress").textContent = "Суперсложная модель считает ETA, подождите...";
+                                var xmlHttp = new XMLHttpRequest();
+                                xmlHttp.open("GET", "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1], false);
+                                xmlHttp.send(null);
+                                document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + xmlHttp.responseText + " секунд";
+                                document.getElementById("progress").textContent = "Суперсложная посчитала ETA, посмотрите. При желании можно выбрать другие точки.";
+                        }
+                });
+        }
+</script>
+<script src="https://maps.googleapis.com/maps/api/js?callback=initMap&libraries=&v=weekly" defer async></script>
+
