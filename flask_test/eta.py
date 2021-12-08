@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 import dgl
 import torch
 import networkx as nx
@@ -85,15 +85,25 @@ app = Flask(__name__)
 
 @app.route("/")
 def print_help():
-    return "<p>Для использования выберите на карте две точки</p>"+ \
-            f"<p>тест модели {model(dg, 'data', [[8089],[8088]])}</p>" + \
-            '''
-            <div id="srclatitude">Точка А пока не выбрана</div>
-            <div id="srclongitude">Точка А пока не выбрана</div>
-            <div id="dstlatitude">Точка Б пока не выбрана</div>
-            <div id="dstlongitude">Точка Б пока не выбрана</div>
-            <div id="progress">Выберите две координаты на карте</div>
-            <div id="map" style="width: 400px; height: 400px"></div>
+    return  '''
+            <head>
+            <link rel="stylesheet" href="/static/eta.css">
+            </head>
+            ''' + \
+            "<body>" + \
+            "<div id='control'>" + \
+                    '''
+                    <div id="progress">Выберите две координаты на карте</div>
+                    <div class="coord_container">
+                            <div id="srclatitude">Точка А пока не выбрана</div>
+                            <div id="srclongitude">Точка А пока не выбрана</div>
+                    </div>
+                    <div class="coord_container">
+                            <div id="dstlatitude">Точка Б пока не выбрана</div>
+                            <div id="dstlongitude">Точка Б пока не выбрана</div>
+                    </div>
+            </div>
+            <div id="map"></div>
             <script>
             var src = null;
             var dst = null;
@@ -160,6 +170,7 @@ def print_help():
             <script
             src="https://maps.googleapis.com/maps/api/js?callback=initMap&libraries=&v=weekly"
             defer async></script>
+            </body>
             '''
 
 
@@ -198,3 +209,6 @@ def debug_eta():
     return r_str
 
 
+@app.route("/static/<path>")
+def static_path(path):
+        return send_from_directory(".", path) 
