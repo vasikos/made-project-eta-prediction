@@ -4,6 +4,7 @@ import torch
 import networkx as nx
 import pandas as pd
 import numpy as np
+import json
 import osmnx as ox
 from model import load_model
 
@@ -11,7 +12,6 @@ from model import load_model
 #device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 device = torch.device('cpu')
 print(f'device={device}')
-
 #MODEL_FILE_NAME =  'model.pth'
 
 def give_nodes_coord(G):
@@ -96,9 +96,26 @@ def base_eta():
     point_2 = ox.nearest_nodes(G, coordinates[3], coordinates[2], return_dist=True)
 
     if point_1[1] > 1000 or  point_2[1] > 1000:
-        return '1000'   
+        return '1000'
 
-    return str(model(dg, 'data', [[g_map[str(point_1[0])]], [g_map[str(point_2[0])]]]).cpu().detach().numpy().tolist()[0][0])
+    return str(round(model(dg, 'data', [[g_map[str(point_1[0])]], [g_map[str(point_2[0])]]]).cpu().detach().numpy().tolist()[0][0]))
+
+
+@app.route("/path")
+def short_path():
+    coordinates_str= request.args.get('cs')
+    coordinates = [float(i) for i in coordinates_str.split(',')]
+
+    point_1 = ox.nearest_nodes(G, coordinates[1], coordinates[0], return_dist=True)
+    point_2 = ox.nearest_nodes(G, coordinates[3], coordinates[2], return_dist=True)
+
+    if point_1[1] > 1000 or  point_2[1] > 1000:
+        return ''
+
+    path = nx.algorithms.shortest_paths.generic.shortest_path(G,source=point_1[0],target=point_2[0], weight='length')
+    print(point_1[1],point_2[1])
+    path_coord = [{'lat':G.nodes[node]['y'], 'lng': G.nodes[node]['x']} for node in path]
+    return json.dumps(path_coord)
 
 
 @app.route("/etadebug")
@@ -125,3 +142,4 @@ def debug_eta():
 @app.route("/static/<path>")
 def static_path(path):
         return send_from_directory(".", path) 
+
