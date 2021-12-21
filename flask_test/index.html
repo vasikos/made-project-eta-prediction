@@ -11,7 +11,7 @@
 	<div class="coord_container">
 			
 			<fieldset> <legend>Выберите время поездки</legend>
-			<p><input type="time" name="selected_time" list="time-list" value = "08:00" onchange="selectedTime()" ></p>
+			<p><input id="time_chooser" type="time" name="selected_time" list="time-list" value = "08:00"></p>
 				<datalist id="time-list">
 					<option value="08:00" label="Начало рабочего дня">
 					<option value="12:00" label="Обед">
@@ -47,16 +47,71 @@
         return new Promise((resolve) => setTimeout(resolve, time));
         }
 
-        function selectedTime() {
-             time = selected_time[0].value;
-        }
-
         function initMap() {
                 const myLatlng = { lat: 39.934155, lng: 116.433318 };
                 const map = new google.maps.Map(document.getElementById("map"), {
                         zoom: 13,
                         center: myLatlng,
                 });
+                var scheduled = false;
+
+                document.getElementById("time_chooser").addEventListener('change',
+                        () => {
+                                if (scheduled) {
+                                        return;
+                                }
+                                scheduled = true;
+                                setTimeout(() => {
+                                        time = selected_time[0].value;
+                                        if (dst !== null) {
+                                                while (markers.length>0) {									
+                                                        var m = markers.pop();
+                                                        m.setMap(null);														
+				                }
+                                                document.getElementById("progress").textContent = "Считаем время в пути...";
+                                                var xmlHttp = new XMLHttpRequest();
+                                                xmlHttp.open("GET", "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1], false);
+                                                xmlHttp.send(null);
+
+                                                document.getElementById("progress").textContent = "Время в пути посчитано. При желании можно выбрать другие точки.";
+                                                var net_time = xmlHttp.responseText
+
+                                                var xmlHttp = new XMLHttpRequest();
+                                                //document.getElementById("progress").textContent =  selected_time[0].value;
+                                                xmlHttp.open("GET", "/path?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1]+","+selected_time[0].value, false);
+                                                xmlHttp.send(null);
+
+                                                path_list = JSON.parse(xmlHttp.responseText)
+                                                var t = path_list.pop()
+                                                if (xmlHttp.responseText == "1000") {
+                                                        document.getElementById("forecast").textContent = "Простите. Точки вне зоны действия"
+                                                } else if (t === 0) {
+                                                        document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + net_time + " минут";
+
+                                                } else {
+                                                document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + Math.round((parseFloat(net_time) + t)/2)   + " минут";
+
+                                                }
+
+                                                markers.push(new google.maps.Polyline({
+                                                        path: path_list,
+                                                        map:map,
+                                                }));  
+                                                markers.push(new google.maps.Marker({
+                                                        position: { lat: src[0], lng: src[1] },
+                                                        label:"А",
+                                                        map
+                                                }));  
+                                                markers.push(new google.maps.Marker({
+                                                        position: { lat: dst[0], lng: dst[1] },
+                                                        label:"Б",
+                                                        map
+                                                })); 
+                                        }
+                                        scheduled = false;
+                                }, 3500)
+                        }
+                )
 
 	        var openStreet = new google.maps.ImageMapType({
 			getTileUrl: function(ll, z) {
