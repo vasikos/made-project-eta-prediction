@@ -1,8 +1,25 @@
 <head>
         <link rel="stylesheet" href="/static/eta.css">
+		<style>
+		div {
+			font-family: Verdana;
+		   }
+		</style>
 </head>
 <body>
 <div id='control'>
+	<div class="coord_container">
+			
+			<fieldset> <legend>Выберите время поездки</legend>
+			<p><input type="time" name="selected_time" list="time-list" value = "08:00" onchange="selectedTime()" ></p>
+				<datalist id="time-list">
+					<option value="08:00" label="Начало рабочего дня">
+					<option value="12:00" label="Обед">
+					<option value="17:00" label="Конец рабочего дня">
+					<option value="01:00" label="Ночь">
+				</datalist>
+			</fieldset>
+		</div>
         <div id="progress">Выберите две точки на карте</div>
         <div class="coord_container">
                 <div>Точка А:</div>
@@ -14,17 +31,26 @@
                 <div id="dstlatitude">Точка Б пока не выбрана</div>
                 <div id="dstlongitude">Точка Б пока не выбрана</div>
         </div>
+		
         <div id="forecast"></div>
 </div>
-<div id="map"></div>
+<div id="map" ></div>
 <script>
         var src = null;
         var dst = null;
 		var markers = new Array(0);
+
+		const selected_time = document.getElementsByName("selected_time");
+		time = selected_time[0].value;
         // sleep time expects milliseconds
         function sleep (time) {
                 return new Promise((resolve) => setTimeout(resolve, time));
         }
+
+        function selectedTime() {
+             time = selected_time[0].value;
+        }
+
         function initMap() {
 		
                 const myLatlng = { lat: 39.934155, lng: 116.433318 };
@@ -32,6 +58,7 @@
                         zoom: 13,
                         center: myLatlng,
                 });
+
 				var openStreet = new google.maps.ImageMapType({
 					  getTileUrl: function(ll, z) {
 						var X = ll.x % (1 << z);  // wrap
@@ -83,7 +110,7 @@
                                 JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2)
                         );
                         infoWindow.open(map);
-                        if (src !== null && dst !== null) {
+                        if (src !== null && dst !== null && time === selected_time[0].value) {
                                 src = null;
                                 dst = null;
 								while (markers.length>0) {
@@ -105,7 +132,7 @@
 																			map
 																		  }));
                                 document.getElementById("progress").textContent = "Выберите вторую точку.";
-                        } else if (dst === null) {
+                        } else if (dst === null || time !== selected_time[0].value) {
                                 dst = [lat, lng];
                                 document.getElementById("dstlatitude").textContent = lat;
                                 document.getElementById("dstlongitude").textContent = lng;
@@ -118,20 +145,26 @@
                                 var xmlHttp = new XMLHttpRequest();
                                 xmlHttp.open("GET", "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1], false);
                                 xmlHttp.send(null);
-                                document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + xmlHttp.responseText + " минут";
+                                if (xmlHttp.responseText == "1000") {
+                                        document.getElementById("forecast").textContent = "Простите. Точки вне зоны действия"
+                                } else {
+                                        document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + xmlHttp.responseText + " минут";
+                                }
                                 document.getElementById("progress").textContent = "Время в пути посчитано. При желании можно выбрать другие точки.";
 
-                                var xmlHttp = new XMLHttpRequest();
-                                xmlHttp.open("GET", "/path?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1], false);
+                                 var xmlHttp = new XMLHttpRequest();
+								//document.getElementById("progress").textContent =  selected_time[0].value;
+                                xmlHttp.open("GET", "/path?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1]+","+selected_time[0].value, false);
                                 xmlHttp.send(null);
                                 path_list = JSON.parse(xmlHttp.responseText)
-								
+                                var t = path_list.pop()
+                                document.getElementById("progress").textContent = document.getElementById("progress").textContent+t
 								markers.push(new google.maps.Polyline({
 																							path: path_list,
 																							map:map,
 																						  }));
-								
-                                
+
+
                         }
                 });
         }

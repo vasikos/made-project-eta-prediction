@@ -44,7 +44,7 @@ def load_model():
         print("can't find the model")
     '''    
     #tmp_model = torch.load('model.pkl')
-    tmp_model.load_state_dict(torch.load('model.pth'))
+    tmp_model.load_state_dict(torch.load('model.pth', map_location=torch.device('cpu')))
 
     return tmp_model
 
