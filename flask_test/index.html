@@ -48,6 +48,7 @@
         }
 
         function selectedTime() {
+
              time = selected_time[0].value;
         }
 
@@ -145,23 +146,30 @@
                                 var xmlHttp = new XMLHttpRequest();
                                 xmlHttp.open("GET", "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1], false);
                                 xmlHttp.send(null);
-                                if (xmlHttp.responseText == "1000") {
-                                        document.getElementById("forecast").textContent = "Простите. Точки вне зоны действия"
-                                } else {
-                                        document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + xmlHttp.responseText + " минут";
-                                }
+
                                 document.getElementById("progress").textContent = "Время в пути посчитано. При желании можно выбрать другие точки.";
+                                var net_time = xmlHttp.responseText
 
                                  var xmlHttp = new XMLHttpRequest();
 								//document.getElementById("progress").textContent =  selected_time[0].value;
                                 xmlHttp.open("GET", "/path?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1]+","+selected_time[0].value, false);
                                 xmlHttp.send(null);
+
                                 path_list = JSON.parse(xmlHttp.responseText)
                                 var t = path_list.pop()
-                                document.getElementById("progress").textContent = document.getElementById("progress").textContent+t
+                                if (xmlHttp.responseText == "1000") {
+                                        document.getElementById("forecast").textContent = "Простите. Точки вне зоны действия"
+                                } else if (t === 0) {
+                                        document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + net_time + " минут";
+
+                                } else {
+                                    document.getElementById("forecast").textContent = "Время в пути между А и Б составляет " + Math.round((parseFloat(net_time) + t)/2)   + " минут";
+
+                                }
+
 								markers.push(new google.maps.Polyline({
-																							path: path_list,
-																							map:map,
+																		path: path_list,
+																	    map:map,
 																						  }));
 
 
