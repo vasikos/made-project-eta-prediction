@@ -38,52 +38,50 @@
 <script>
         var src = null;
         var dst = null;
-		var markers = new Array(0);
+	var markers = new Array(0);
 
-		const selected_time = document.getElementsByName("selected_time");
-		time = selected_time[0].value;
+	const selected_time = document.getElementsByName("selected_time");
+	time = selected_time[0].value;
         // sleep time expects milliseconds
         function sleep (time) {
-                return new Promise((resolve) => setTimeout(resolve, time));
+        return new Promise((resolve) => setTimeout(resolve, time));
         }
 
         function selectedTime() {
-
              time = selected_time[0].value;
         }
 
         function initMap() {
-		
                 const myLatlng = { lat: 39.934155, lng: 116.433318 };
                 const map = new google.maps.Map(document.getElementById("map"), {
                         zoom: 13,
                         center: myLatlng,
                 });
 
-				var openStreet = new google.maps.ImageMapType({
-					  getTileUrl: function(ll, z) {
-						var X = ll.x % (1 << z);  // wrap
-						return "http://tile.openstreetmap.org/"
-							+ z + "/" + X + "/" + ll.y + ".png";
-					  },
-					  tileSize: new google.maps.Size(256, 256),
-					  maxZoom: 18,
-					  name: "OSM"
-					}); 
-					map.mapTypes.set('osm', openStreet);
-					map.setMapTypeId('osm');
-					map.setOptions({
-					  mapTypeControlOptions: {
-						mapTypeIds: [
-						  'osm',
-						  google.maps.MapTypeId.ROADMAP,
-						  google.maps.MapTypeId.TERRAIN,
-						  google.maps.MapTypeId.SATELLITE,
-						  google.maps.MapTypeId.HYBRID
-						],
-						style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
-					  }
-					});
+	        var openStreet = new google.maps.ImageMapType({
+			getTileUrl: function(ll, z) {
+				var X = ll.x % (1 << z);  // wrap
+					return "http://tile.openstreetmap.org/"
+						+ z + "/" + X + "/" + ll.y + ".png";
+			},
+		        tileSize: new google.maps.Size(256, 256),
+			maxZoom: 18,
+			name: "OSM"
+		}); 
+		map.mapTypes.set('osm', openStreet);
+		map.setMapTypeId('osm');
+		map.setOptions({
+			mapTypeControlOptions: {
+				mapTypeIds: [
+					'osm',
+					google.maps.MapTypeId.ROADMAP,
+					google.maps.MapTypeId.TERRAIN,
+					google.maps.MapTypeId.SATELLITE,
+					google.maps.MapTypeId.HYBRID
+				],
+				style: google.maps.MapTypeControlStyle.DROPDOWN_MENU
+			}
+		});
 				
                 // Create the initial InfoWindow.
                 let infoWindow = new google.maps.InfoWindow({
@@ -114,12 +112,10 @@
                         if (src !== null && dst !== null && time === selected_time[0].value) {
                                 src = null;
                                 dst = null;
-								while (markers.length>0) {
-									
-									var m = markers.pop();
-									m.setMap(null);
-														
-								}
+				while (markers.length>0) {									
+					var m = markers.pop();
+					m.setMap(null);														
+				}
                         }
                         if (src === null) {
                                 src = [lat, lng];
@@ -127,21 +123,21 @@
                                 document.getElementById("srclongitude").textContent = lng;
                                 document.getElementById("dstlatitude").textContent = "...";
                                 document.getElementById("dstlongitude").textContent = "...";
-								markers.push(new google.maps.Marker({
-																			position: { lat: lat, lng: lng },
-																			label:"А",
-																			map
-																		  }));
+				markers.push(new google.maps.Marker({
+					position: { lat: lat, lng: lng },
+					label:"А",
+					map
+			        }));
                                 document.getElementById("progress").textContent = "Выберите вторую точку.";
                         } else if (dst === null || time !== selected_time[0].value) {
                                 dst = [lat, lng];
                                 document.getElementById("dstlatitude").textContent = lat;
                                 document.getElementById("dstlongitude").textContent = lng;
-								markers.push(new google.maps.Marker({
-																			position: { lat: lat, lng: lng },
-																			label:"Б",
-																			map
-																		  }));
+				markers.push(new google.maps.Marker({
+					position: { lat: lat, lng: lng },
+					label:"Б",
+					map
+				}));
                                 document.getElementById("progress").textContent = "Считаем время в пути...";
                                 var xmlHttp = new XMLHttpRequest();
                                 xmlHttp.open("GET", "/eta?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1], false);
@@ -150,8 +146,8 @@
                                 document.getElementById("progress").textContent = "Время в пути посчитано. При желании можно выбрать другие точки.";
                                 var net_time = xmlHttp.responseText
 
-                                 var xmlHttp = new XMLHttpRequest();
-								//document.getElementById("progress").textContent =  selected_time[0].value;
+                                var xmlHttp = new XMLHttpRequest();
+				//document.getElementById("progress").textContent =  selected_time[0].value;
                                 xmlHttp.open("GET", "/path?cs=" + src[0] + "," + src[1] + "," + dst[0] + "," +dst[1]+","+selected_time[0].value, false);
                                 xmlHttp.send(null);
 
@@ -167,12 +163,10 @@
 
                                 }
 
-								markers.push(new google.maps.Polyline({
-																		path: path_list,
-																	    map:map,
-																						  }));
-
-
+				markers.push(new google.maps.Polyline({
+					path: path_list,
+				        map:map,
+			        }));
                         }
                 });
         }
